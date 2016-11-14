@@ -1,5 +1,6 @@
 package lanou.foodpies.mine;
 
+import android.content.Intent;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -8,6 +9,7 @@ import android.widget.Toast;
 
 import lanou.foodpies.R;
 import lanou.foodpies.base.BaseActivity;
+import lanou.foodpies.zhuce.ZhuCeActivity;
 
 /**
  * Created by XiaoyuLu on 16/11/5.
@@ -64,6 +66,10 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener{
 
                 break;
             case R.id.my_login_boohee:
+
+                Intent intent = new Intent(LoginActivity.this, ZhuCeActivity.class);
+                startActivity(intent);
+
                 // 进行薄荷登录
                 Toast.makeText(this, "薄荷登录", Toast.LENGTH_SHORT).show();
                 Log.d("LoginActivity", "薄荷登录");
