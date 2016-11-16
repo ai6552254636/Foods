@@ -4,15 +4,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.text.LoginFilter;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
-
-import org.greenrobot.eventbus.EventBus;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,14 +30,22 @@ import lanou.foodpies.MainActivity;
 import lanou.foodpies.R;
 import lanou.foodpies.base.BaseActivity;
 import lanou.foodpies.beans.MyUserBean;
-import lanou.foodpies.beans.TextBean;
 
-public class ZhuCeActivity extends BaseActivity {
+
+public class ZhuCeActivity extends BaseActivity implements View.OnClickListener {
 
     private Button mBtnDL;
     private Button mBtnZZ;
     private EditText mEdtZH;
     private EditText mEdtMM;
+    private CheckBox mCheckBox1;
+    private CheckBox mCheckBox2;
+    private SharedPreferences.Editor editor;
+    private ImageButton mImagBtn;
+
+//    private String getUsername; // 输入的用户名
+//    private String getPassword; // 密码
+
 
     @Override
     protected int getLayout() {
@@ -46,10 +54,9 @@ public class ZhuCeActivity extends BaseActivity {
 
     @Override
     protected void initViews() {
-        //第一：默认初始化   建议初始化放到application里
-        Bmob.initialize(this, "827b0566258335edfd3669efaa940c45");
-        initViewsId();
 
+        initViewsId();
+        spvoid();
     }
 
 //    获取控件id
@@ -58,23 +65,69 @@ public class ZhuCeActivity extends BaseActivity {
         mBtnZZ = bindView(R.id.btn_zhuce);
         mEdtZH = bindView(R.id.edt_zhanghao);
         mEdtMM = bindView(R.id.edt_mima);
+        mCheckBox1 = bindView(R.id.checkBox1);
+        mCheckBox2 = bindView(R.id.checkBox2);
+        mImagBtn = bindView(R.id.cancel);
 
-        mBtnDL.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                repeatlogin();
-                login();  //调用下面登录的方法
+        mBtnDL.setOnClickListener(this);
+        mBtnZZ.setOnClickListener(this);
+        mImagBtn.setOnClickListener(this);
+        mCheckBox2.setOnClickListener(this);
 
-            }
-        });
+    }
 
-        mBtnZZ.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                createuser();  //掉用下面创建用户注册的方法
-            }
-        });
 
+//    用户名数据持久化的方式
+    protected void spvoid () {
+        SharedPreferences preferences = getSharedPreferences("UserInfo",MODE_PRIVATE);
+        editor = preferences.edit();
+
+        /**
+         * 启动程序时首先检查sharedPreferences中是否储存有用户名和密码
+         若无，则将checkbox状态显示为未选中
+         若有，则直接中sharedPreferences中读取用户名，并将checkbox状态显示为已选中
+         这里getString()方法需要两个参数，第一个是键，第二个是值。
+         启动程序时我们传入需要读取的键，值填null即可。若有值则会自动显示，没有则为空。
+         */
+
+//        判断框内是否有账号显示 是否勾选CheckBox
+        String name = preferences.getString("userName" , null);
+        if (name == null) {
+            mCheckBox1.setChecked(false);
+        } else {
+            mEdtZH.setText(name);
+            mCheckBox1.setChecked(true);
+        }
+    }
+
+
+//    点击事件
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.btn_denglu:
+                login();
+                break;
+            case R.id.btn_zhuce:
+                createuser();
+                break;
+            case R.id.cancel:
+                finish();
+                break;
+            case R.id.checkBox2:
+                //        判断框内密码是否显示   是否勾选CheckBox
+                if(mCheckBox2.isChecked()) {
+            mEdtMM.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                    Toast.makeText(this, "选中", Toast.LENGTH_SHORT).show();
+                } else {
+            mEdtMM.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                    Toast.makeText(this, "未选中", Toast.LENGTH_SHORT).show();
+                }
+
+                break;
+            default:
+                break;
+        }
     }
 
 //    创建用户
@@ -96,6 +149,7 @@ public class ZhuCeActivity extends BaseActivity {
             }
         });
     }
+
 
 //    重复登录判断方法
     public void repeatlogin () {
@@ -124,27 +178,45 @@ public class ZhuCeActivity extends BaseActivity {
             });
         }
     }
-//登录方法
-   protected void login () {
-       MyUserBean myUserBean = new MyUserBean();
-       myUserBean.setUsername(mEdtZH.getText().toString());
-       myUserBean.setPassword(mEdtMM.getText().toString());
-       myUserBean.login(new SaveListener<MyUserBean>() {
+
+
+//    登录方法
+    protected void login () {
+       BmobUser bmobUser = new BmobUser();
+        bmobUser.setUsername(mEdtZH.getText().toString());
+        bmobUser.setPassword(mEdtMM.getText().toString());
+        bmobUser.login(new SaveListener<MyUserBean>() {
            @Override
            public void done(MyUserBean myUserBean, BmobException e) {
                 if (e == null) {
+                    //跳转到第三个Activity然后在那边执行onRestart方法mainfest注册Activity的启动模式为singletask
                     Intent intent = new Intent(ZhuCeActivity.this,MainActivity.class);
                     startActivity(intent);
                     finish();
                     Toast.makeText(ZhuCeActivity.this, "登录成功", Toast.LENGTH_SHORT).show();
+                    //如果用户选择了记住用户名
+                    //将用户输入的用户名存入储存中，键为userName
+                    if (mCheckBox1.isChecked()) {
+                        editor.putString("userName", mEdtZH.getText().toString());
+                        editor.commit();
+                    } else {
+                        //否则用户名将被清除
+                        editor.remove("userName");
+                        editor.commit();
+                    }
+                    //外部判断,如果用户名登录密码正确可以正常登录,
+                    //否则登录失败清空密码,重新登录
                 } else {
-                    Toast.makeText(ZhuCeActivity.this, "登录失败", Toast.LENGTH_SHORT).show();
+                    editor.remove("userPassword");
+                    editor.commit();
+                    Toast.makeText(ZhuCeActivity.this, "登录失败,请重新输入", Toast.LENGTH_SHORT).show();
                 }
            }
        });
    }
 
-//上传头像的方法
+
+//    上传头像的方法
     protected  void upLoadIcon () {
         final MyUserBean myUser = MyUserBean.getCurrentUser(MyUserBean.class);
         if (myUser == null) {
@@ -224,18 +296,10 @@ public class ZhuCeActivity extends BaseActivity {
 
     }
 
-//将用户输入的账号存储到本地数据库
-    protected void memoryAccount () {
-        SharedPreferences setini = getSharedPreferences(mEdtZH.getText().toString(), 0);
-        SharedPreferences.Editor edit = setini.edit();
-        edit.putString(mEdtZH.getText().toString(), "");
-        edit.commit();
-    }
-
-
 
     @Override
     protected void initData() {
 
     }
+
 }

@@ -1,4 +1,4 @@
-package lanou.foodpies.tools;
+package lanou.foodpies.interfaces;
 
 /**
  * Created by XiaoyuLu on 16/11/9.
@@ -8,4 +8,3 @@ package lanou.foodpies.tools;
 public interface OnRecyclerViewItemClickListener {
     public void onItemClick(int position);
 }
-

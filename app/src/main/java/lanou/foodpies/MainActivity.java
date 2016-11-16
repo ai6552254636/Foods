@@ -1,5 +1,6 @@
 package lanou.foodpies;
 
+import android.content.Intent;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
@@ -15,6 +16,7 @@ public class MainActivity extends BaseActivity {
 
     private RadioGroup radioGroup;
     private RadioButton radioButton;
+    private RadioButton radioButton2;
 
     @Override
     protected int getLayout() {
@@ -31,6 +33,7 @@ public class MainActivity extends BaseActivity {
     protected void initViewsId () {
         radioGroup = (RadioGroup) findViewById(R.id.main_radiogroup);
         radioButton = (RadioButton) findViewById(R.id.main_radio_library);
+        radioButton2 = (RadioButton) findViewById(R.id.main_radio_my);
         radioButton.setChecked(true);
 //        获取管理者权限替换布局
         FragmentTransaction manager = getSupportFragmentManager().beginTransaction();
@@ -47,7 +50,16 @@ public class MainActivity extends BaseActivity {
         Log.d("MainActivity", "获取控件id");
     }
 
-   /**  被initViewsId调用  FrameLayout布局替换Fragment */
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if (requestCode == 1 && requestCode == 2) {
+//
+//        }
+//
+//    }
+
+    /**  被initViewsId调用  FrameLayout布局替换Fragment */
    protected void judgeRadioButtonIsChecked(int checkedId) {
 
        FragmentManager manager = getSupportFragmentManager();
@@ -77,5 +89,12 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void initData() {
 
+    }
+//  接受从第三个Activity跳转过来的界面因为mainfest将Activity默认的启动方式
+//  修改成了singleTask而Activity的生命周期里面的onCreate方法只走了一次所以跳转过来之后直接执行的是onRestart方法
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        radioButton2.setChecked(true);
     }
 }

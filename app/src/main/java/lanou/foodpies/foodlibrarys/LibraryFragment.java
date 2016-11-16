@@ -11,11 +11,16 @@ import android.widget.Toast;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.ArrayList;
 
 import lanou.foodpies.R;
 import lanou.foodpies.base.BaseFragment;
 import lanou.foodpies.beans.LibraryBean;
+import lanou.foodpies.beans.SearchTypeEventBean;
+import lanou.foodpies.foodlibrarys.more.LibraryMoreActivity;
+import lanou.foodpies.foodlibrarys.search.SearchActivity;
 import lanou.foodpies.tools.GsonRequest;
 import lanou.foodpies.tools.VolleySingleton;
 import lanou.foodpies.urls.UriLines;
@@ -35,6 +40,8 @@ public class LibraryFragment extends BaseFragment implements View.OnClickListene
     private GridView gridViewSort;
     private GridView gridViewBrand;
     private GridView gridViewDrink;
+
+    public static final String INTENT_SEARCH_SIMPLE_TYPE = "simpleSearch";
 
     @Override
     protected int getLayout() {
@@ -104,7 +111,7 @@ public class LibraryFragment extends BaseFragment implements View.OnClickListene
                 LibraryBean.GroupBean groupBean = response.getGroup().get(2);
 
                 Intent intent = new Intent(getActivity(), LibraryMoreActivity.class);
-                putDataInIntent(intent, groupBean, position);
+                putDataToFoodMore(intent, groupBean, position);
                 startActivity(intent);
             }
         });
@@ -127,7 +134,7 @@ public class LibraryFragment extends BaseFragment implements View.OnClickListene
                 LibraryBean.GroupBean groupBean = response.getGroup().get(1);
 
                 Intent intent = new Intent(getActivity(), LibraryMoreActivity.class);
-                putDataInIntent(intent, groupBean, position);
+                putDataToFoodMore(intent, groupBean, position);
                 startActivity(intent);
 
             }
@@ -155,7 +162,7 @@ public class LibraryFragment extends BaseFragment implements View.OnClickListene
                 LibraryBean.GroupBean groupBean = response.getGroup().get(0);
 
                 Intent intent = new Intent(getActivity(), LibraryMoreActivity.class);
-                putDataInIntent(intent, groupBean, position);
+                putDataToFoodMore(intent, groupBean, position);
                 startActivity(intent);
 
             }
@@ -163,9 +170,8 @@ public class LibraryFragment extends BaseFragment implements View.OnClickListene
 
     }
 
-    /** CategoriesBean类的数据拆分后通过 Intent 传到下一个 Intent */
-    private void putDataInIntent(Intent intent, LibraryBean.GroupBean groupBean, int position) {
-
+    /** CategoriesBean 类的数据拆分后通过 Intent 传到下一个 Intent */
+    private void putDataToFoodMore(Intent intent, LibraryBean.GroupBean groupBean, int position) {
         String kind = groupBean.getKind();
         LibraryBean.GroupBean.CategoriesBean bean = groupBean.getCategories().get(position);
 
@@ -197,7 +203,12 @@ public class LibraryFragment extends BaseFragment implements View.OnClickListene
         switch (v.getId()) {
             case R.id.library_btn_search:
                 // 搜索
+                // EventBus 黏性发布事件: 发布搜索类型字符串
+                EventBus.getDefault().postSticky(
+                        new SearchTypeEventBean(LibraryFragment.INTENT_SEARCH_SIMPLE_TYPE));
+
                 Intent intent = new Intent(getActivity(), SearchActivity.class);
+                intent.putExtra("searchType", "simpleSearch");
                 startActivity(intent);
 
                 break;

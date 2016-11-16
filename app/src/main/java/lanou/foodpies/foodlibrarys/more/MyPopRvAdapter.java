@@ -1,4 +1,4 @@
-package lanou.foodpies.foodlibrarys;
+package lanou.foodpies.foodlibrarys.more;
 
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import lanou.foodpies.R;
 import lanou.foodpies.base.CommonVH;
 import lanou.foodpies.beans.NutritionalElementBean;
-import lanou.foodpies.tools.OnRecyclerViewItemClickListener;
+import lanou.foodpies.interfaces.OnRecyclerViewItemClickListener;
 
 /**
  * Created by XiaoyuLu on 16/11/5.
@@ -71,6 +71,7 @@ public class MyPopRvAdapter extends RecyclerView.Adapter{
     public int getItemCount() {
         return beanArrayList == null ? 0 : beanArrayList.size();
     }
+
 
 
 }

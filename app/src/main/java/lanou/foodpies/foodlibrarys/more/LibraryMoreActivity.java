@@ -1,8 +1,4 @@
-package lanou.foodpies.foodlibrarys;
-
-/**
- * Created by dllo on 16/11/10.
- */
+package lanou.foodpies.foodlibrarys.more;
 
 import android.content.Intent;
 import android.support.v7.widget.DividerItemDecoration;
@@ -34,8 +30,8 @@ import lanou.foodpies.base.BaseActivity;
 import lanou.foodpies.beans.FoodMoreBean;
 import lanou.foodpies.beans.LibraryBean;
 import lanou.foodpies.beans.NutritionalElementBean;
+import lanou.foodpies.interfaces.OnRecyclerViewItemClickListener;
 import lanou.foodpies.tools.GsonRequest;
-import lanou.foodpies.tools.OnRecyclerViewItemClickListener;
 import lanou.foodpies.tools.VolleySingleton;
 import lanou.foodpies.urls.UriLines;
 
@@ -87,9 +83,9 @@ public class LibraryMoreActivity extends BaseActivity implements View.OnClickLis
     public static final String ORDER_DEC_TEXT = "由高到低";  // 降序
     public static final int ORDER_ASC_IMAGE = R.mipmap.ic_food_ordering_up; // 上升箭头, 低到高
     public static final int ORDER_DEC_IMAGE = R.mipmap.ic_food_ordering_down; // 下降箭头, 高到低
-    public static final int ORDER_ASC_INT = 1;
-    public static final int ORDER_DEC_INT = 0;
-    private String url;  // 进行
+    public static final int ORDER_ASC_INT = 1; // 低到高
+    public static final int ORDER_DEC_INT = 0; // 高到低
+    private String url;  // 进行数据请求的链接
 
     @Override
     protected int getLayout() {
@@ -180,6 +176,137 @@ public class LibraryMoreActivity extends BaseActivity implements View.OnClickLis
     }
 
     /**
+     * 点击全部 后 调用的方法
+     */
+    private void clickAllMethod() {
+        // 点击 全部, 显示 pop
+        if (!popupWindowAll.isShowing()) {
+            popupWindowAll.showAsDropDown(allBtn);
+        } else {
+            popupWindowAll.dismiss();
+        }
+        // 将营养素排序的弹窗关闭
+        if (popupWindowNutrition != null && popupWindowNutrition.isShowing()) {
+            popupWindowNutrition.dismiss();
+        }
+    }
+
+    /**
+     * 点击营养素 后 调用的方法
+     */
+    private void clickNutritionMethod() {
+        // 营养素排序, 显示 pop
+        if (!popupWindowNutrition.isShowing()) {
+            popupWindowNutrition.showAsDropDown(nutritionalTV);
+        } else {
+            popupWindowNutrition.dismiss();
+        }
+        // 将全部的弹窗关闭
+        if (popupWindowAll != null && popupWindowAll.isShowing()) {
+            popupWindowAll.dismiss();
+        }
+    }
+
+    /**
+     * 点击 全部 后 显示的界面
+     */
+    private void initAllPopupWindowMethod() {
+        popupWindowAll = new PopupWindow(
+                200,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        View view = LayoutInflater.from(this).inflate(R.layout.pop_library_more_all, null);
+        popList = (ListView) view.findViewById(R.id.pop_library_more_all_list);
+
+        // 使用 ArrayAdapter 进行全部的数据的显示
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(
+                LibraryMoreActivity.this,
+                R.layout.item_pop_all, R.id.item_pop_all_tv, subNameArrayList);
+        popList.setAdapter(arrayAdapter);
+
+        popListItemClickMethod(popList);
+
+        popupWindowAll.setContentView(view);
+    }
+
+    /**
+     * 点击 营养素排序 后 显示的界面
+     */
+    private void initNutritionPopupWindowMethod() {
+        popupWindowNutrition = new PopupWindow(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        View view = LayoutInflater.from(this).inflate(R.layout.pop_library_more_nutritional, null);
+        popRecycler = (RecyclerView) view.findViewById(R.id.pop_library_more_nutritional_recycler);
+
+        // 网络请求 营养素排序 数据
+        // 并用 接口回调 实现 Recycler的Item 的点击事件
+        nutritionalGsonMethod();
+
+        popupWindowNutrition.setContentView(view);
+    }
+
+
+    /**
+     * 点击 全部 的弹窗中的 Item 的点击事件
+     */
+    private void popListItemClickMethod(ListView popList) {
+        popList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                // 将全部的Button 文字改变
+                allBtn.setText(subNameArrayList.get(position));
+
+                if (position == 0) {
+                    // 点击全部的 全部选项
+                    url = part1Kind + getKind + part2Value + getId + part4OrderBy +
+                            orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
+
+                } else {
+                    subValue = subIdArrayList.get(position - 1);
+                    url = part1Kind + getKind + part2Value + getId +
+                            part3SubValue + subValue + ")" + part4OrderBy +
+                            orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
+                }
+                showData(url);
+                popupWindowAll.dismiss();
+            }
+        });
+    }
+
+    /**
+     * 点击 营养素排序 的弹窗中的 Item 的点击事件
+     */
+    private void popRecyclerItemClickMethod(MyPopRvAdapter adapter, final ArrayList<NutritionalElementBean.TypesBean> beanArrayList) {
+        adapter.setOnRecyclerViewItemClickListener(new OnRecyclerViewItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+
+                orderBtn.setVisibility(View.VISIBLE);
+                orderIV.setVisibility(View.VISIBLE);
+                nutritionalTV.setText(beanArrayList.get(position).getName());
+
+                // order_by = 营养素排序的 index(1代表无序, 2代表热量, 依次向下)
+                orderIndex = beanArrayList.get(position).getIndex();
+
+                if (allBtn.getText().equals(subNameArrayList.get(0))) {
+                    // 当全部 选择的是 全部的情况
+                    url = part1Kind + getKind + part2Value + getId +
+                            part4OrderBy + orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
+                } else {
+                    url = part1Kind + getKind + part2Value + getId +
+                            part3SubValue + subValue + ")" + part4OrderBy +
+                            orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
+                }
+                showData(url);
+                popupWindowNutrition.dismiss();
+            }
+        });
+    }
+
+
+    /**
      * 点击由高到低 或者 由低到高 后的排序事件
      */
     private void clickOrderMethod() {
@@ -210,122 +337,11 @@ public class LibraryMoreActivity extends BaseActivity implements View.OnClickLis
     }
 
     /**
-     * 点击全部 后 调用的方法
-     */
-    private void clickAllMethod() {
-        // 点击 全部, 显示 pop
-        if (popupWindowAll == null || !popupWindowAll.isShowing()) {
-            initAllPopupWindowMethod();
-            //popupWindowAll.showAsDropDown();
-        } else {
-            popupWindowAll.dismiss();
-        }
-        // 将营养素排序的弹窗关闭
-        if (popupWindowNutrition != null && popupWindowNutrition.isShowing()) {
-            popupWindowNutrition.dismiss();
-        }
-    }
-
-    /**
-     * 点击营养素 后 调用的方法
-     */
-    private void clickNutritionMethod() {
-        // 营养素排序, 显示 pop
-        if (!popupWindowNutrition.isShowing()) {
-//            initNutritionPopupWindowMethod();
-            popupWindowNutrition.showAsDropDown(nutritionalTV);
-        } else {
-            popupWindowNutrition.dismiss();
-        }
-//        // 将全部的弹窗关闭
-        if (popupWindowAll != null && popupWindowAll.isShowing()) {
-            popupWindowAll.dismiss();
-        }
-    }
-
-
-    /**
-     * 点击 全部 后 显示的界面
-     */
-    private void initAllPopupWindowMethod() {
-        popupWindowAll = new PopupWindow(
-                200,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        View view = LayoutInflater.from(this).inflate(R.layout.pop_library_more_all, null);
-        popList = (ListView) view.findViewById(R.id.pop_library_more_all_list);
-
-        // 使用 ArrayAdapter 进行全部的数据的显示
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(
-                LibraryMoreActivity.this,
-                R.layout.item_pop_all, R.id.item_pop_all_tv, subNameArrayList);
-        popList.setAdapter(arrayAdapter);
-
-        popListItemClickMethod(popList);
-
-        popupWindowAll.setContentView(view);
-        popupWindowAll.showAsDropDown(allBtn);
-    }
-
-    /**
-     * 点击 营养素排序 后 显示的界面
-     */
-    private void initNutritionPopupWindowMethod() {
-        popupWindowNutrition = new PopupWindow(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-
-        View view = LayoutInflater.from(this).inflate(R.layout.pop_library_more_nutritonal, null);
-        popRecycler = (RecyclerView) view.findViewById(R.id.pop_library_more_nutritional_recycler);
-
-        // 网络请求 营养素排序 数据
-        // 并用 接口回调 实现 Recycler的Item 的点击事件
-        nutritionalGsonMethod();
-
-        popupWindowNutrition.setContentView(view);
-
-    }
-
-
-    /**
-     * 点击 全部 的弹窗中的 Item 的点击事件
-     */
-    private void popListItemClickMethod(ListView popList) {
-        popList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                // 将全部的Button 文字改变
-                allBtn.setText(subNameArrayList.get(position));
-
-                if (position == 0) {
-                    // 点击全部的 全部选项
-//                    String url = part1Kind + getKind + part2Value + getId + partTail;
-                    String url = part1Kind + getKind + part2Value + getId + part4OrderBy +
-                            orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
-
-                    showData(url);
-
-                } else {
-                    // TODO 需要将 part4, part5 和 part6 都 改为变换的值
-                    subValue = subIdArrayList.get(position - 1);
-//                    String url = part1Kind + getKind + part2Value + getId + part3SubValue +
-//                            subValue + partTail;
-                    String url = part1Kind + getKind + part2Value + getId +
-                            part3SubValue + subValue + ")" + part4OrderBy +
-                            orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
-                    showData(url);
-                }
-                popupWindowAll.dismiss();
-            }
-        });
-    }
-
-    /**
      * 第二个pop(营养素排序) 的数据的请求
      */
     private void nutritionalGsonMethod() {
         GsonRequest<NutritionalElementBean> gsonRequest = new GsonRequest<>(
-                NutritionalElementBean.class, UriLines.LIBRARY_NATRITIONALELEMENT_URL,
+                NutritionalElementBean.class, UriLines.LIBRARY_NUTRITION_URL,
                 new Response.Listener<NutritionalElementBean>() {
                     @Override
                     public void onResponse(NutritionalElementBean response) {
@@ -358,44 +374,9 @@ public class LibraryMoreActivity extends BaseActivity implements View.OnClickLis
         VolleySingleton.getInstance().addRequest(gsonRequest);
     }
 
-    /**
-     * 点击 营养素排序 的弹窗中的 Item 的点击事件
-     */
-    private void popRecyclerItemClickMethod(MyPopRvAdapter adapter, final ArrayList<NutritionalElementBean.TypesBean> beanArrayList) {
-        adapter.setOnRecyclerViewItemClickListener(new OnRecyclerViewItemClickListener() {
-            @Override
-            public void onItemClick(int position) {
-
-                orderBtn.setVisibility(View.VISIBLE);
-                orderIV.setVisibility(View.VISIBLE);
-                // order_by = 营养素排序的 index(1代表无序, 2代表热量, 依次向下)
-                orderIndex = beanArrayList.get(position).getIndex();
-
-                Toast.makeText(LibraryMoreActivity.this, "index:" + orderIndex, Toast.LENGTH_SHORT).show();
-
-                String url;
-                if (allBtn.getText().equals(subNameArrayList.get(0))) {
-                    // 当全部 选择的是 全部的情况
-                    url = part1Kind + getKind + part2Value + getId +
-                            part4OrderBy + orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
-                } else {
-                    url = part1Kind + getKind + part2Value + getId +
-                            part3SubValue + subValue + ")" + part4OrderBy +
-                            orderIndex + part5Page + 1 + part6OrderAsc + orderAsc;
-                }
-                Log.d("LibraryMoreActivity", url);
-
-                showData(url);
-                popupWindowNutrition.dismiss();
-            }
-        });
-    }
-
 
     /**
      * 传入url 进行网络请求 获取数据, 并进行铺建
-     *
-     * @param url
      */
     private void showData(String url) {
 

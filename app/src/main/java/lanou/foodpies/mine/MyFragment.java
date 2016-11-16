@@ -9,9 +9,12 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
+import cn.bmob.v3.BmobUser;
 import lanou.foodpies.R;
 import lanou.foodpies.base.BaseFragment;
+import lanou.foodpies.mine.collection.CollectionActivity;
 import lanou.foodpies.tools.CircleDrawable;
 
 /**
@@ -28,6 +31,10 @@ public class MyFragment extends BaseFragment implements View.OnClickListener {
     private LinearLayout foodDataLl;
     private LinearLayout orderLl;
     private ImageView iconIV;
+    private TextView mTVname;
+    private LinearLayout loginAlreadyLl;
+    private String getUsername;
+    private TextView usernameTV;
 
     @Override
     protected int getLayout() {
@@ -37,20 +44,10 @@ public class MyFragment extends BaseFragment implements View.OnClickListener {
     @Override
     protected void initViews() {
 
-        settingImgBtn = bindView(R.id.my_setting);
-        loginBtn = bindView(R.id.my_login);
-        iconIV = bindView(R.id.my_icon);
+        initViewID();    //获取控件Id
 
-        photoLl = (LinearLayout) getActivity().findViewById(R.id.my_photo_ll);
-        collectionLl = (LinearLayout) getActivity().findViewById(R.id.my_collection_ll);
-        foodDataLl = (LinearLayout) getActivity().findViewById(R.id.my_data_ll);
-        orderLl = (LinearLayout) getActivity().findViewById(R.id.my_order_ll);
-
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_analyse_default);
-        CircleDrawable drawable = new CircleDrawable(bitmap);
-        iconIV.setImageDrawable(drawable);
-
-        setClick(this, settingImgBtn, loginBtn);
+        cicledraw();     //画圆
+        setClick(this, settingImgBtn, loginBtn,mTVname);
         setClick(this, photoLl, collectionLl, foodDataLl, orderLl);
 
     }
@@ -60,6 +57,32 @@ public class MyFragment extends BaseFragment implements View.OnClickListener {
 
     }
 
+//    findViewID
+    protected void initViewID () {
+        settingImgBtn = bindView(R.id.my_setting);
+        loginBtn = bindView(R.id.my_login);
+        iconIV = bindView(R.id.my_icon);
+        mTVname = bindView(R.id.tv_name);
+
+        loginAlreadyLl = (LinearLayout) getView().findViewById(R.id.my_login_already_ll);
+        usernameTV = bindView(R.id.my_login_already_username);
+        photoLl = (LinearLayout) getActivity().findViewById(R.id.my_photo_ll);
+        collectionLl = (LinearLayout) getActivity().findViewById(R.id.my_collection_ll);
+        foodDataLl = (LinearLayout) getActivity().findViewById(R.id.my_data_ll);
+        orderLl = (LinearLayout) getActivity().findViewById(R.id.my_order_ll);
+
+
+
+    }
+
+//    实现头像圆头图
+    protected void cicledraw () {
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_analyse_default);
+        CircleDrawable drawable = new CircleDrawable(bitmap);
+        iconIV.setImageDrawable(drawable);
+    }
+
+    //    点击事件
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -75,11 +98,15 @@ public class MyFragment extends BaseFragment implements View.OnClickListener {
                 startActivity(intent1);
 
                 break;
+
             case R.id.my_photo_ll:
 
                 break;
             case R.id.my_collection_ll:
-
+                // 界面跳转, 如果登录了就跳到收藏页, 需要带值跳转, 将账号和收藏的东西对应上
+                // TODO 未登录时则跳到登录界面
+                Intent intent3 = new Intent(mContext, CollectionActivity.class);
+                startActivity(intent3);
                 break;
             case R.id.my_data_ll:
 
@@ -92,4 +119,25 @@ public class MyFragment extends BaseFragment implements View.OnClickListener {
 
         }
     }
+    /** 复写 Fragment 的生命周期, 当处于登录状态时显示用户名 */
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        BmobUser bmobUser = BmobUser.getCurrentUser(BmobUser.class);
+        if (bmobUser != null) {
+            // 处于登录状态
+            loginAlreadyLl.setVisibility(View.VISIBLE);
+            loginBtn.setVisibility(View.INVISIBLE);
+            getUsername = bmobUser.getUsername();
+            usernameTV.setText(getUsername);
+
+        } else {
+            loginAlreadyLl.setVisibility(View.INVISIBLE);
+            loginBtn.setVisibility(View.VISIBLE);
+        }
+
+
+    }
+
 }

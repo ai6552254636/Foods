@@ -15,7 +15,7 @@ import lanou.foodpies.R;
  */
 public abstract class BaseFragment extends Fragment {
 
-    private Context mContext;
+    protected Context mContext;
 
     @Override
     public void onAttach(Context context) {
